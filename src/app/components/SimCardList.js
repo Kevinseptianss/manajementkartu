@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { FiEdit2, FiTrash2, FiSave, FiX, FiList } from 'react-icons/fi';
 
 export default function SimCardList({ cards, setCards }) {
@@ -169,10 +170,12 @@ export default function SimCardList({ cards, setCards }) {
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <img
+                      <Image
                         src={generateQRCode(editFormData.nomor)}
                         alt="QR Code"
-                        className="w-12 h-12"
+                        width={48}
+                        height={48}
+                        className="rounded"
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -215,10 +218,12 @@ export default function SimCardList({ cards, setCards }) {
                       {getStatusBadge(card.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <img
+                      <Image
                         src={generateQRCode(card.nomor)}
                         alt="QR Code"
-                        className="w-12 h-12"
+                        width={48}
+                        height={48}
+                        className="rounded"
                         title={`QR Code untuk ${card.nomor}`}
                       />
                     </td>

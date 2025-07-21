@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { FiArchive, FiPlus, FiTrash2, FiPackage, FiBox } from 'react-icons/fi';
 
 export default function RackManagement({ racks, onAddRack, setRacks }) {
@@ -287,9 +288,11 @@ export default function RackManagement({ racks, onAddRack, setRacks }) {
                               
                               {boxKecil.perdana.length > 0 && (
                                 <div className="mt-1">
-                                  <img
+                                  <Image
                                     src={generateBarcode(boxKecil.perdana.map(p => p.nomor).join(','))}
                                     alt="Barcode"
+                                    width={200}
+                                    height={32}
                                     className="w-full h-8 object-contain"
                                   />
                                 </div>

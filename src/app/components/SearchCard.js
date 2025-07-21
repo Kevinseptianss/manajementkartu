@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { FiSearch, FiFilter } from 'react-icons/fi';
 
 export default function SearchCard({ simCards, racks, machines }) {
@@ -122,10 +123,12 @@ export default function SearchCard({ simCards, racks, machines }) {
         </div>
         <div className="flex items-center space-x-2">
           {getStatusBadge(card.status)}
-          <img
+          <Image
             src={generateQRCode(card.nomor)}
             alt="QR Code"
-            className="w-12 h-12"
+            width={48}
+            height={48}
+            className="rounded"
           />
         </div>
       </div>
@@ -293,7 +296,7 @@ export default function SearchCard({ simCards, racks, machines }) {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Hasil Pencarian untuk "{searchTerm}"
+              Hasil Pencarian untuk &quot;{searchTerm}&quot;
             </h3>
             <span className="text-sm text-gray-600">
               {results.length} hasil ditemukan
@@ -302,7 +305,7 @@ export default function SearchCard({ simCards, racks, machines }) {
 
           {results.length === 0 ? (
             <div className="bg-white p-8 rounded-lg shadow text-center">
-              <p className="text-gray-500">Tidak ada hasil yang ditemukan untuk pencarian "{searchTerm}"</p>
+              <p className="text-gray-500">Tidak ada hasil yang ditemukan untuk pencarian &quot;{searchTerm}&quot;</p>
               <p className="text-sm text-gray-400 mt-2">
                 Coba gunakan kata kunci yang berbeda atau periksa ejaan Anda.
               </p>
