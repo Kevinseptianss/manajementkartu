@@ -20,6 +20,14 @@ import MachineManagement from './components/MachineManagement';
 import EarningsReport from './components/EarningsReport';
 import SearchCard from './components/SearchCard';
 import { useSimCards, useMachines, useRacks } from '../hooks/useFirebase';
+import { 
+  SkeletonStats, 
+  SkeletonForm, 
+  SkeletonTable, 
+  SkeletonMachine, 
+  SkeletonEarnings, 
+  SkeletonSearch 
+} from './components/SkeletonLoader';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -108,9 +116,9 @@ export default function Home() {
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white shadow-lg transition-all duration-300 ease-in-out`}>
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
           {sidebarOpen && (
-            <h1 className="text-xl font-bold text-gray-800">
+            <h1 className="text-xl font-bold text-slate-900">
               SIM Manager
             </h1>
           )}
@@ -133,7 +141,7 @@ export default function Home() {
                 className={`w-full flex items-center px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
                   activeTab === tab.id
                     ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                    : 'text-gray-700'
+                    : 'text-slate-900'
                 }`}
               >
                 <IconComponent size={20} className="flex-shrink-0" />
@@ -147,8 +155,8 @@ export default function Home() {
 
         {/* Sidebar Footer Stats */}
         {sidebarOpen && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
-            <div className="text-xs text-gray-600 space-y-1">
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-gray-50">
+            <div className="text-xs text-slate-900 space-y-1">
               <div className="flex justify-between">
                 <span>Total Kartu:</span>
                 <span className="font-semibold">{simCards.length}</span>
@@ -169,22 +177,22 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b px-6 py-4">
+        <header className="bg-white shadow-sm border-b border-gray-100 px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-slate-900">
                 {tabs.find(tab => tab.id === activeTab)?.label || 'Dashboard'}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-slate-700 mt-1">
                 Sistem Manajemen Kartu SIM dan Perangkat
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className="flex items-center space-x-2 text-sm text-slate-700">
                 <FiUsers size={16} />
                 <span>{getTotalWorkers()} Workers</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className="flex items-center space-x-2 text-sm text-slate-700">
                 <FiTrendingUp size={16} />
                 <span>Rp {getTotalEarnings().toLocaleString()}</span>
               </div>
@@ -197,131 +205,139 @@ export default function Home() {
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <FiSmartphone className="w-6 h-6 text-blue-600" />
+              {(simCardsLoading || machinesLoading || racksLoading) ? (
+                <SkeletonStats />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-white p-6 rounded-lg shadow-sm border-gray-100 border cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('simcards')}>
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <FiSmartphone className="w-6 h-6 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-slate-700">Total Kartu SIM</p>
+                        <p className="text-2xl font-bold text-slate-900">{simCards.length}</p>
+                        <p className="text-xs text-slate-600">
+                          {simCards.filter(card => card.status === 'active').length} aktif
+                        </p>
                       </div>
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total Kartu SIM</p>
-                      <p className="text-2xl font-bold text-gray-900">{simCards.length}</p>
-                      <p className="text-xs text-gray-500">
-                        {simCards.filter(card => card.status === 'active').length} aktif
-                      </p>
-                    </div>
                   </div>
-                </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                        <FiUsers className="w-6 h-6 text-green-600" />
+                  <div className="bg-white p-6 rounded-lg shadow-sm border-gray-100 border cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('machines')}>
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                          <FiUsers className="w-6 h-6 text-green-600" />
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-slate-700">Total Workers</p>
+                        <p className="text-2xl font-bold text-slate-900">{getTotalWorkers()}</p>
+                        <p className="text-xs text-slate-600">
+                          Across {machines.length} machines
+                        </p>
                       </div>
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total Workers</p>
-                      <p className="text-2xl font-bold text-gray-900">{getTotalWorkers()}</p>
-                      <p className="text-xs text-gray-500">
-                        Across {machines.length} machines
-                      </p>
-                    </div>
                   </div>
-                </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <FiArchive className="w-6 h-6 text-yellow-600" />
+                  <div className="bg-white p-6 rounded-lg shadow-sm border-gray-100 border cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('racks')}>
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                          <FiArchive className="w-6 h-6 text-yellow-600" />
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-slate-700">Total Rak</p>
+                        <p className="text-2xl font-bold text-slate-900">{racks.length}</p>
+                        <p className="text-xs text-slate-600">
+                          Storage management
+                        </p>
                       </div>
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total Rak</p>
-                      <p className="text-2xl font-bold text-gray-900">{racks.length}</p>
-                      <p className="text-xs text-gray-500">
-                        Storage management
-                      </p>
-                    </div>
                   </div>
-                </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <FiDollarSign className="w-6 h-6 text-purple-600" />
+                  <div className="bg-white p-6 rounded-lg shadow-sm border-gray-100 border cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('earnings')}>
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <FiDollarSign className="w-6 h-6 text-purple-600" />
+                        </div>
                       </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total Pendapatan</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        Rp {getTotalEarnings().toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Avg: Rp {getTotalWorkers() > 0 ? Math.round(getTotalEarnings() / getTotalWorkers()).toLocaleString() : 0}/worker
-                      </p>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-slate-700">Total Pendapatan</p>
+                        <p className="text-2xl font-bold text-slate-900">
+                          Rp {getTotalEarnings().toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-600">
+                          Avg: Rp {getTotalWorkers() > 0 ? Math.round(getTotalEarnings() / getTotalWorkers()).toLocaleString() : 0}/worker
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Additional Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div 
-                  className="bg-white p-6 rounded-lg shadow-sm border cursor-pointer hover:bg-orange-50 transition-colors"
-                  onClick={() => handleDashboardCardClick('usableAfter90')}
-                >
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                        <FiSmartphone className="w-6 h-6 text-orange-600" />
+              {(simCardsLoading || machinesLoading) ? (
+                <SkeletonStats />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div 
+                    className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 cursor-pointer hover:bg-orange-50 transition-colors"
+                    onClick={() => handleDashboardCardClick('usableAfter90')}
+                  >
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <FiSmartphone className="w-6 h-6 text-orange-600" />
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-slate-700">Kartu Dapat Digunakan (90+ Hari)</p>
+                        <p className="text-2xl font-bold text-slate-900">{getUsableCardsAfter90Days()}</p>
+                        <p className="text-xs text-orange-600">
+                          Klik untuk lihat detail
+                        </p>
                       </div>
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Kartu Dapat Digunakan (90+ Hari)</p>
-                      <p className="text-2xl font-bold text-gray-900">{getUsableCardsAfter90Days()}</p>
-                      <p className="text-xs text-orange-600">
-                        Klik untuk lihat detail
-                      </p>
-                    </div>
                   </div>
-                </div>
 
-                <div 
-                  className="bg-white p-6 rounded-lg shadow-sm border cursor-pointer hover:bg-red-50 transition-colors"
-                  onClick={() => handleDashboardCardClick('needShooting')}
-                >
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                        <FiSearch className="w-6 h-6 text-red-600" />
+                  <div 
+                    className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 cursor-pointer hover:bg-red-50 transition-colors"
+                    onClick={() => handleDashboardCardClick('needShooting')}
+                  >
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                          <FiSearch className="w-6 h-6 text-red-600" />
+                        </div>
                       </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Kartu Perlu Di Tembak</p>
-                      <p className="text-2xl font-bold text-gray-900">{getCardsNeedShooting()}</p>
-                      <p className="text-xs text-red-600">
-                        Klik untuk cari per box
-                      </p>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-slate-700">Kartu Perlu Di Tembak</p>
+                        <p className="text-2xl font-bold text-slate-900">{getCardsNeedShooting()}</p>
+                        <p className="text-xs text-red-600">
+                          Klik untuk cari per box
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Machine Status Overview */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
                     <FiMonitor className="w-5 h-5 mr-2" />
                     Status Mesin
                   </h3>
                   
                   {machines.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">Belum ada mesin yang terdaftar</p>
+                    <p className="text-slate-600 text-center py-8">Belum ada mesin yang terdaftar</p>
                   ) : (
                     <div className="space-y-3">
                       {machines.map((machine) => {
@@ -332,14 +348,14 @@ export default function Home() {
                         return (
                           <div key={machine.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div>
-                              <p className="font-medium text-gray-900">{machine.namaMesin}</p>
-                              <p className="text-sm text-gray-600">{machine.lokasi}</p>
+                              <p className="font-medium text-slate-900">{machine.namaMesin}</p>
+                              <p className="text-sm text-slate-700">{machine.lokasi}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-sm font-medium text-slate-900">
                                 {activePorts}/{machine.jumlahPort} ports
                               </p>
-                              <p className="text-xs text-gray-600">
+                              <p className="text-xs text-slate-700">
                                 {workersCount} workers • Rp {earnings.toLocaleString()}
                               </p>
                             </div>
@@ -350,14 +366,14 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
                     <FiTrendingUp className="w-5 h-5 mr-2" />
                     Top Workers
                   </h3>
                   
                   {getTotalWorkers() === 0 ? (
-                    <p className="text-gray-500 text-center py-8">Belum ada worker yang terdaftar</p>
+                    <p className="text-slate-600 text-center py-8">Belum ada worker yang terdaftar</p>
                   ) : (
                     <div className="space-y-3">
                       {(() => {
@@ -388,15 +404,15 @@ export default function Home() {
                                   {index + 1}
                                 </div>
                                 <div>
-                                  <p className="font-medium text-gray-900">{worker.name}</p>
-                                  <p className="text-sm text-gray-600">{worker.ports} ports</p>
+                                  <p className="font-medium text-slate-900">{worker.name}</p>
+                                  <p className="text-sm text-slate-700">{worker.ports} ports</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-medium text-gray-900">
+                                <p className="font-medium text-slate-900">
                                   Rp {worker.totalEarnings.toLocaleString()}
                                 </p>
-                                <p className="text-xs text-gray-600">
+                                <p className="text-xs text-slate-700">
                                   Rp {Math.round(worker.totalEarnings / worker.ports).toLocaleString()}/port
                                 </p>
                               </div>
@@ -409,8 +425,8 @@ export default function Home() {
               </div>
 
               {/* Card Usage Statistics */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
                   <FiSmartphone className="w-5 h-5 mr-2" />
                   Statistik Kartu SIM
                 </h3>
@@ -433,10 +449,10 @@ export default function Home() {
                     <p className="text-sm text-yellow-800">Sedang Digunakan</p>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-2xl font-bold text-gray-600">
+                    <p className="text-2xl font-bold text-slate-800">
                       {simCards.filter(card => card.status === 'inactive').length}
                     </p>
-                    <p className="text-sm text-gray-800">Tidak Aktif</p>
+                    <p className="text-sm text-slate-800">Tidak Aktif</p>
                   </div>
                 </div>
               </div>
@@ -451,6 +467,7 @@ export default function Home() {
                 setCards={setSimCards}
                 onUpdate={updateSimCard}
                 onDelete={deleteSimCard}
+                loading={simCardsLoading}
               />
             </div>
           )}
@@ -474,16 +491,28 @@ export default function Home() {
               onUpdate={updateMachine}
               onDelete={deleteMachine}
               simCards={simCards}
+              setSimCards={setSimCards}
+              loading={machinesLoading}
             />
           )}
 
           {activeTab === 'earnings' && (
-            <EarningsReport machines={machines} simCards={simCards} />
+            <EarningsReport 
+              machines={machines} 
+              simCards={simCards} 
+              loading={machinesLoading || simCardsLoading}
+            />
           )}
 
           {activeTab === 'search' && (
-            <SearchCard simCards={simCards} racks={racks} machines={machines} />
+            <SearchCard 
+              simCards={simCards} 
+              racks={racks} 
+              machines={machines}
+              loading={simCardsLoading || racksLoading || machinesLoading}
+            />
           )}
+
         </main>
       </div>
     </div>

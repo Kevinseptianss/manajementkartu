@@ -8,9 +8,7 @@ const nextConfig = {
     FIREBASE_CLIENT_ID: process.env.FIREBASE_CLIENT_ID,
     FIREBASE_CLIENT_X509_CERT_URL: process.env.FIREBASE_CLIENT_X509_CERT_URL,
   },
-  experimental: {
-    serverComponentsExternalPackages: ['firebase-admin']
-  },
+  serverExternalPackages: ['firebase-admin'],
   images: {
     remotePatterns: [
       {

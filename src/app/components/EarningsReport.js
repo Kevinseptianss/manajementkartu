@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { FiDollarSign, FiUsers, FiMonitor, FiTrendingUp, FiBarChart } from 'react-icons/fi';
+import { SkeletonEarnings } from './SkeletonLoader';
 
-export default function EarningsReport({ machines, simCards }) {
+export default function EarningsReport({ machines, simCards, loading = false }) {
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [selectedMachine, setSelectedMachine] = useState('all');
   const [selectedWorker, setSelectedWorker] = useState('all');
@@ -117,6 +118,7 @@ export default function EarningsReport({ machines, simCards }) {
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
           >
             <option value="today">Hari Ini</option>
             <option value="week">Minggu Ini</option>
@@ -129,12 +131,11 @@ export default function EarningsReport({ machines, simCards }) {
             value={selectedMachine}
             onChange={(e) => setSelectedMachine(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
           >
             <option value="all">Semua Mesin</option>
             {machines.map(machine => (
-              <option key={machine.id} value={machine.id}>
-                {machine.namaMesin}
-              </option>
+              <option key={machine.id} value={machine.id}>{machine.namaMesin}</option>
             ))}
           </select>
 
@@ -142,6 +143,7 @@ export default function EarningsReport({ machines, simCards }) {
             value={selectedWorker}
             onChange={(e) => setSelectedWorker(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
           >
             <option value="all">Semua Worker</option>
             {getWorkerEarnings().map(worker => (
@@ -151,7 +153,12 @@ export default function EarningsReport({ machines, simCards }) {
             ))}
           </select>
         </div>
+      </div>
 
+      {loading ? (
+        <SkeletonEarnings />
+      ) : (
+        <>
         {selectedPeriod === 'custom' && (
           <div className="flex gap-4 mt-4">
             <div>
@@ -178,11 +185,10 @@ export default function EarningsReport({ machines, simCards }) {
             </div>
           </div>
         )}
-      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -198,7 +204,7 @@ export default function EarningsReport({ machines, simCards }) {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -212,7 +218,7 @@ export default function EarningsReport({ machines, simCards }) {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -228,7 +234,7 @@ export default function EarningsReport({ machines, simCards }) {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -398,6 +404,8 @@ export default function EarningsReport({ machines, simCards }) {
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

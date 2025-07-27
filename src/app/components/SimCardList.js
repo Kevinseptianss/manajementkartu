@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { FiEdit2, FiTrash2, FiSave, FiX, FiList } from 'react-icons/fi';
+import { SkeletonTable } from './SkeletonLoader';
 
-export default function SimCardList({ cards, setCards, onUpdate, onDelete }) {
+export default function SimCardList({ cards, setCards, onUpdate, onDelete, loading = false }) {
   const [editingCard, setEditingCard] = useState(null);
   const [editFormData, setEditFormData] = useState({});
 
@@ -81,7 +82,7 @@ export default function SimCardList({ cards, setCards, onUpdate, onDelete }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100">
       <div className="px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 flex items-center">
           <FiList className="w-5 h-5 mr-2" />
@@ -89,8 +90,11 @@ export default function SimCardList({ cards, setCards, onUpdate, onDelete }) {
         </h2>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      {loading ? (
+        <SkeletonTable />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -281,14 +285,18 @@ export default function SimCardList({ cards, setCards, onUpdate, onDelete }) {
               </tr>
             ))}
           </tbody>
+          {cards.length === 0 && (
+            <tbody>
+              <tr>
+                <td colSpan="9" className="text-center py-8">
+                  <p className="text-gray-500">Belum ada kartu SIM yang ditambahkan</p>
+                </td>
+              </tr>
+            </tbody>
+          )}
         </table>
-        
-        {cards.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Belum ada kartu SIM yang ditambahkan</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

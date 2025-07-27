@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { FiMonitor, FiPlus, FiEdit2, FiTrash2, FiSettings, FiUsers, FiDollarSign } from 'react-icons/fi';
+import { SkeletonMachine } from './SkeletonLoader';
 
-export default function MachineManagement({ machines, onAddMachine, setMachines, simCards, setSimCards }) {
+export default function MachineManagement({ machines, onAddMachine, setMachines, simCards, setSimCards, loading = false }) {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     namaMesin: '',
@@ -160,13 +161,21 @@ export default function MachineManagement({ machines, onAddMachine, setMachines,
         <button
           onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center"
+          disabled={loading}
         >
           <FiPlus className="w-4 h-4 mr-2" />
           {showForm ? 'Tutup Form' : 'Tambah Mesin Baru'}
         </button>
       </div>
 
-      {showForm && (
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonMachine />
+          <SkeletonMachine />
+        </div>
+      ) : (
+        <>
+          {showForm && (
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             {editingMachine ? 'Edit Mesin' : 'Tambah Mesin Baru'}
@@ -406,7 +415,7 @@ export default function MachineManagement({ machines, onAddMachine, setMachines,
                   </thead>
                   <tbody>
                     {machine.ports.filter(port => port.status !== 'kosong').map((port) => (
-                      <tr key={port.id} className="border-t">
+                      <tr key={port.id} className="border-t border-gray-100">
                         <td className="px-2 py-1">{port.portNumber}</td>
                         <td className="px-2 py-1">
                           <span className={`px-1 py-0.5 rounded text-xs ${getPortStatusColor(port.status)}`}>
@@ -431,6 +440,8 @@ export default function MachineManagement({ machines, onAddMachine, setMachines,
         <div className="text-center py-8">
           <p className="text-gray-500">Belum ada mesin yang ditambahkan</p>
         </div>
+      )}
+        </>
       )}
     </div>
   );

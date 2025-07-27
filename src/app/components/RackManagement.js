@@ -166,7 +166,7 @@ export default function RackManagement({ racks, onAddRack, setRacks, simCards })
             </div>
 
             {/* Box Besar Management */}
-            <div className="border-t pt-4">
+            <div className="border-t border-gray-100 pt-4">
               <h4 className="text-md font-medium text-gray-900 mb-2">Manajemen Box Besar</h4>
               <div className="flex gap-2 mb-2">
                 <input

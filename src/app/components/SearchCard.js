@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { FiSearch, FiFilter } from 'react-icons/fi';
+import { SkeletonSearch } from './SkeletonLoader';
 
-export default function SearchCard({ simCards, racks, machines }) {
+export default function SearchCard({ simCards, racks, machines, loading = false }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('all');
   const [filterType, setFilterType] = useState('all');
@@ -330,14 +331,17 @@ export default function SearchCard({ simCards, racks, machines }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-          <FiSearch className="w-6 h-6 mr-2" />
-          Cari Kartu & Data
-        </h2>
-        
-        {/* Search Form */}
-        <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+        <FiSearch className="w-6 h-6 mr-2" />
+        Cari Kartu & Data
+      </h2>
+      
+      {loading ? (
+        <SkeletonSearch />
+      ) : (
+        <div>
+          {/* Search Form */}
+          <div className="bg-white p-6 rounded-lg shadow">
           {/* Filter Options */}
           <div className="flex gap-4 mb-4">
             <div className="flex items-center">
@@ -401,11 +405,10 @@ export default function SearchCard({ simCards, racks, machines }) {
           <div className="text-sm text-gray-600">
             <p>Tips: Anda dapat mencari berdasarkan nomor kartu, jenis kartu, lokasi, nama box, nama mesin, worker, atau data lainnya.</p>
           </div>
-        </div>
-      </div>
+          </div>
 
-      {/* Search Results */}
-      {searchTerm && (
+          {/* Search Results */}
+          {searchTerm && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
@@ -472,6 +475,8 @@ export default function SearchCard({ simCards, racks, machines }) {
               <p className="text-sm text-green-800">Kartu Aktif</p>
             </div>
           </div>
+        </div>
+          )}
         </div>
       )}
     </div>
