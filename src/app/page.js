@@ -19,25 +19,39 @@ import RackManagement from './components/RackManagement';
 import MachineManagement from './components/MachineManagement';
 import EarningsReport from './components/EarningsReport';
 import SearchCard from './components/SearchCard';
+import { useSimCards, useMachines, useRacks } from '../hooks/useFirebase';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [simCards, setSimCards] = useState([]);
-  const [racks, setRacks] = useState([]);
-  const [machines, setMachines] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const addSimCard = (card) => {
-    setSimCards([...simCards, { ...card, id: Date.now() }]);
-  };
-
-  const addRack = (rack) => {
-    setRacks([...racks, { ...rack, id: Date.now() }]);
-  };
-
-  const addMachine = (machine) => {
-    setMachines([...machines, { ...machine, id: Date.now() }]);
-  };
+  // Use Firebase hooks
+  const { 
+    simCards, 
+    addSimCard, 
+    updateSimCard, 
+    deleteSimCard, 
+    setSimCards,
+    loading: simCardsLoading 
+  } = useSimCards();
+  
+  const { 
+    machines, 
+    addMachine, 
+    updateMachine, 
+    deleteMachine, 
+    setMachines,
+    loading: machinesLoading 
+  } = useMachines();
+  
+  const { 
+    racks, 
+    addRack, 
+    updateRack, 
+    deleteRack, 
+    setRacks,
+    loading: racksLoading 
+  } = useRacks();
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
@@ -59,6 +73,34 @@ export default function Home() {
     return machines.reduce((total, machine) => {
       return total + machine.ports.reduce((machineTotal, port) => machineTotal + (port.pendapatan || 0), 0);
     }, 0);
+  };
+
+  const getUsableCardsAfter90Days = () => {
+    const today = new Date();
+    return simCards.filter(card => {
+      if (!card.masaAktif) return false;
+      const masaAktifDate = new Date(card.masaAktif);
+      const diffTime = today - masaAktifDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays >= 90 && card.status === 'active';
+    }).length;
+  };
+
+  const getCardsNeedShooting = () => {
+    return simCards.filter(card => {
+      // Cards that need to be "shot" (could be cards with certain status or criteria)
+      return card.status === 'inactive' || (card.masaTenggang && parseInt(card.masaTenggang) <= 7);
+    }).length;
+  };
+
+  const handleDashboardCardClick = (type) => {
+    if (type === 'needShooting') {
+      // Navigate to search with filter for cards that need shooting
+      setActiveTab('search');
+    } else if (type === 'usableAfter90') {
+      // Navigate to SIM cards with filter
+      setActiveTab('simcards');
+    }
   };
 
   return (
@@ -227,6 +269,49 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Additional Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div 
+                  className="bg-white p-6 rounded-lg shadow-sm border cursor-pointer hover:bg-orange-50 transition-colors"
+                  onClick={() => handleDashboardCardClick('usableAfter90')}
+                >
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <FiSmartphone className="w-6 h-6 text-orange-600" />
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Kartu Dapat Digunakan (90+ Hari)</p>
+                      <p className="text-2xl font-bold text-gray-900">{getUsableCardsAfter90Days()}</p>
+                      <p className="text-xs text-orange-600">
+                        Klik untuk lihat detail
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className="bg-white p-6 rounded-lg shadow-sm border cursor-pointer hover:bg-red-50 transition-colors"
+                  onClick={() => handleDashboardCardClick('needShooting')}
+                >
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <FiSearch className="w-6 h-6 text-red-600" />
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Kartu Perlu Di Tembak</p>
+                      <p className="text-2xl font-bold text-gray-900">{getCardsNeedShooting()}</p>
+                      <p className="text-xs text-red-600">
+                        Klik untuk cari per box
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Machine Status Overview */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -361,16 +446,35 @@ export default function Home() {
           {activeTab === 'simcards' && (
             <div>
               <SimCardForm onSubmit={addSimCard} />
-              <SimCardList cards={simCards} setCards={setSimCards} />
+              <SimCardList 
+                cards={simCards} 
+                setCards={setSimCards}
+                onUpdate={updateSimCard}
+                onDelete={deleteSimCard}
+              />
             </div>
           )}
 
           {activeTab === 'racks' && (
-            <RackManagement racks={racks} onAddRack={addRack} setRacks={setRacks} />
+            <RackManagement 
+              racks={racks} 
+              onAddRack={addRack} 
+              setRacks={setRacks}
+              onUpdate={updateRack}
+              onDelete={deleteRack}
+              simCards={simCards}
+            />
           )}
 
           {activeTab === 'machines' && (
-            <MachineManagement machines={machines} onAddMachine={addMachine} setMachines={setMachines} />
+            <MachineManagement 
+              machines={machines} 
+              onAddMachine={addMachine} 
+              setMachines={setMachines}
+              onUpdate={updateMachine}
+              onDelete={deleteMachine}
+              simCards={simCards}
+            />
           )}
 
           {activeTab === 'earnings' && (

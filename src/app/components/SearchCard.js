@@ -7,10 +7,56 @@ import { FiSearch, FiFilter } from 'react-icons/fi';
 export default function SearchCard({ simCards, racks, machines }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('all');
+  const [filterType, setFilterType] = useState('all');
   const [results, setResults] = useState([]);
 
   const handleSearch = () => {
-    if (!searchTerm.trim()) {
+    let filteredCards = simCards;
+
+    // Apply filters first
+    if (filterType === 'needShooting') {
+      filteredCards = simCards.filter(card => 
+        card.status === 'inactive' || (card.masaTenggang && parseInt(card.masaTenggang) <= 7)
+      );
+    } else if (filterType === 'usableAfter90') {
+      const today = new Date();
+      filteredCards = simCards.filter(card => {
+        if (!card.masaAktif) return false;
+        const masaAktifDate = new Date(card.masaAktif);
+        const diffTime = today - masaAktifDate;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays >= 90 && card.status === 'active';
+      });
+    } else if (filterType === 'byBox') {
+      // Group cards by box for easy searching
+      const cardsByBox = {};
+      filteredCards.forEach(card => {
+        if (!cardsByBox[card.box]) {
+          cardsByBox[card.box] = [];
+        }
+        cardsByBox[card.box].push(card);
+      });
+      
+      if (!searchTerm.trim()) {
+        // Show all boxes
+        const boxResults = Object.keys(cardsByBox).map(boxName => ({
+          type: 'box',
+          data: {
+            boxName,
+            cards: cardsByBox[boxName],
+            totalCards: cardsByBox[boxName].length,
+            needShootingCards: cardsByBox[boxName].filter(card => 
+              card.status === 'inactive' || (card.masaTenggang && parseInt(card.masaTenggang) <= 7)
+            ).length
+          },
+          matchType: 'Box'
+        }));
+        setResults(boxResults);
+        return;
+      }
+    }
+
+    if (!searchTerm.trim() && filterType === 'all') {
       setResults([]);
       return;
     }
@@ -19,8 +65,8 @@ export default function SearchCard({ simCards, racks, machines }) {
     let searchResults = [];
 
     if (searchType === 'all' || searchType === 'simcard') {
-      // Search in SIM cards
-      const cardResults = simCards.filter(card => 
+      // Search in filtered SIM cards
+      const cardResults = filteredCards.filter(card => 
         card.nomor.toLowerCase().includes(term) ||
         card.jenisKartu.toLowerCase().includes(term) ||
         card.lokasiRak.toLowerCase().includes(term) ||
@@ -243,6 +289,45 @@ export default function SearchCard({ simCards, racks, machines }) {
     );
   };
 
+  const renderBoxResult = (boxData) => (
+    <div className="bg-white p-4 rounded-lg shadow border-l-4 border-orange-500">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h4 className="text-lg font-semibold text-gray-900">Box: {boxData.boxName}</h4>
+          <p className="text-sm text-gray-600">Total kartu: {boxData.totalCards}</p>
+        </div>
+        <div className="text-right">
+          <span className="bg-red-100 text-red-800 px-2 py-1 text-xs font-medium rounded-full">
+            {boxData.needShootingCards} perlu di tembak
+          </span>
+        </div>
+      </div>
+      
+      <div className="mt-3">
+        <h5 className="text-sm font-medium text-gray-700 mb-2">Kartu yang perlu di tembak:</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {boxData.cards.filter(card => 
+            card.status === 'inactive' || (card.masaTenggang && parseInt(card.masaTenggang) <= 7)
+          ).slice(0, 6).map((card, idx) => (
+            <div key={idx} className="text-xs bg-red-50 p-2 rounded">
+              <p className="font-medium">{card.nomor}</p>
+              <p className="text-gray-600">{card.jenisKartu}</p>
+              <p className="text-red-600">Status: {card.status}</p>
+              {card.masaTenggang && parseInt(card.masaTenggang) <= 7 && (
+                <p className="text-red-600">Tenggang: {card.masaTenggang} hari</p>
+              )}
+            </div>
+          ))}
+          {boxData.needShootingCards > 6 && (
+            <div className="text-xs text-gray-500 col-span-2">
+              ...dan {boxData.needShootingCards - 6} kartu lainnya
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -253,11 +338,38 @@ export default function SearchCard({ simCards, racks, machines }) {
         
         {/* Search Form */}
         <div className="bg-white p-6 rounded-lg shadow">
+          {/* Filter Options */}
+          <div className="flex gap-4 mb-4">
+            <div className="flex items-center">
+              <FiFilter className="w-4 h-4 mr-2 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Filter:</span>
+            </div>
+            <select
+              value={filterType}
+              onChange={(e) => {
+                setFilterType(e.target.value);
+                if (e.target.value !== 'all') {
+                  handleSearch();
+                }
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Semua Data</option>
+              <option value="needShooting">Kartu Perlu Di Tembak</option>
+              <option value="usableAfter90">Kartu Dapat Digunakan (90+ Hari)</option>
+              <option value="byBox">Pencarian Per Box</option>
+            </select>
+          </div>
+
           <div className="flex gap-4 mb-4">
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Masukkan nomor kartu, nama mesin, lokasi, worker, atau data lainnya..."
+                placeholder={
+                  filterType === 'byBox' 
+                    ? "Masukkan nama box untuk mencari kartu yang perlu di tembak..."
+                    : "Masukkan nomor kartu, nama mesin, lokasi, worker, atau data lainnya..."
+                }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -269,6 +381,7 @@ export default function SearchCard({ simCards, racks, machines }) {
               value={searchType}
               onChange={(e) => setSearchType(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={filterType === 'byBox'}
             >
               <option value="all">Semua</option>
               <option value="simcard">Kartu SIM</option>
@@ -323,6 +436,7 @@ export default function SearchCard({ simCards, racks, machines }) {
                   {result.type === 'simcard' && renderSimCardResult(result.data)}
                   {result.type === 'rack' && renderRackResult(result.data)}
                   {result.type === 'machine' && renderMachineResult(result.data)}
+                  {result.type === 'box' && renderBoxResult(result.data)}
                 </div>
               ))}
             </div>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { FiArchive, FiPlus, FiTrash2, FiPackage, FiBox } from 'react-icons/fi';
 
-export default function RackManagement({ racks, onAddRack, setRacks }) {
+export default function RackManagement({ racks, onAddRack, setRacks, simCards }) {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     namaKartu: '',
@@ -25,6 +25,18 @@ export default function RackManagement({ racks, onAddRack, setRacks }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Check for duplicate box names in existing SIM cards
+    const existingBoxes = simCards.map(card => card.box.toLowerCase());
+    const hasConflict = formData.boxBesar.some(box => 
+      existingBoxes.includes(box.namaBox.toLowerCase())
+    );
+    
+    if (hasConflict) {
+      alert('Nama box sudah digunakan di kartu SIM. Pilih nama yang berbeda.');
+      return;
+    }
+    
     onAddRack(formData);
     setFormData({
       namaKartu: '',
@@ -44,6 +56,13 @@ export default function RackManagement({ racks, onAddRack, setRacks }) {
 
   const addBoxBesar = () => {
     if (boxForm.namaBox) {
+      // Check if box name already exists in SIM cards
+      const existingBoxes = simCards.map(card => card.box.toLowerCase());
+      if (existingBoxes.includes(boxForm.namaBox.toLowerCase())) {
+        alert('Nama box sudah digunakan di kartu SIM. Pilih nama yang berbeda.');
+        return;
+      }
+      
       setFormData({
         ...formData,
         boxBesar: [...formData.boxBesar, { ...boxForm, id: Date.now() }]

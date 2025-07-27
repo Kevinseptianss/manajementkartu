@@ -4,12 +4,21 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { FiEdit2, FiTrash2, FiSave, FiX, FiList } from 'react-icons/fi';
 
-export default function SimCardList({ cards, setCards }) {
+export default function SimCardList({ cards, setCards, onUpdate, onDelete }) {
   const [editingCard, setEditingCard] = useState(null);
   const [editFormData, setEditFormData] = useState({});
 
-  const deleteCard = (id) => {
-    setCards(cards.filter(card => card.id !== id));
+  const deleteCard = async (id) => {
+    try {
+      if (onDelete) {
+        await onDelete(id);
+      } else {
+        setCards(cards.filter(card => card.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      alert('Error deleting card: ' + error.message);
+    }
   };
 
   const startEdit = (card) => {
@@ -17,12 +26,21 @@ export default function SimCardList({ cards, setCards }) {
     setEditFormData(card);
   };
 
-  const saveEdit = () => {
-    setCards(cards.map(card => 
-      card.id === editingCard ? editFormData : card
-    ));
-    setEditingCard(null);
-    setEditFormData({});
+  const saveEdit = async () => {
+    try {
+      if (onUpdate) {
+        await onUpdate(editingCard, editFormData);
+      } else {
+        setCards(cards.map(card => 
+          card.id === editingCard ? editFormData : card
+        ));
+      }
+      setEditingCard(null);
+      setEditFormData({});
+    } catch (error) {
+      console.error('Error updating card:', error);
+      alert('Error updating card: ' + error.message);
+    }
   };
 
   const cancelEdit = () => {
@@ -85,6 +103,9 @@ export default function SimCardList({ cards, setCards }) {
                 Masa Aktif
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tanggal Digunakan
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tenggang
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -135,6 +156,15 @@ export default function SimCardList({ cards, setCards }) {
                         type="date"
                         name="masaAktif"
                         value={editFormData.masaAktif}
+                        onChange={handleEditChange}
+                        className="w-full px-2 py-1 border border-gray-300 rounded"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="date"
+                        name="tanggalDigunakan"
+                        value={editFormData.tanggalDigunakan || ''}
                         onChange={handleEditChange}
                         className="w-full px-2 py-1 border border-gray-300 rounded"
                       />
@@ -205,6 +235,9 @@ export default function SimCardList({ cards, setCards }) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {card.masaAktif}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {card.tanggalDigunakan || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {card.masaTenggang} hari

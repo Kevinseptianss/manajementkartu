@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { FiMonitor, FiPlus, FiEdit2, FiTrash2, FiSettings, FiUsers, FiDollarSign } from 'react-icons/fi';
 
-export default function MachineManagement({ machines, onAddMachine, setMachines }) {
+export default function MachineManagement({ machines, onAddMachine, setMachines, simCards, setSimCards }) {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     namaMesin: '',
@@ -99,12 +99,55 @@ export default function MachineManagement({ machines, onAddMachine, setMachines 
     return colors[status] || colors.kosong;
   };
 
+  const getTotalWorkers = (machine) => {
+    return machine.ports.filter(port => port.worker && port.worker.trim() !== '').length;
+  };
+
   const getTotalPendapatan = (machine) => {
     return machine.ports.reduce((total, port) => total + (port.pendapatan || 0), 0);
   };
 
-  const getTotalWorkers = (machine) => {
-    return machine.ports.filter(port => port.worker && port.worker.trim() !== '').length;
+  const getAvailableSimCards = () => {
+    return simCards.filter(card => card.status === 'active');
+  };
+
+  const assignSimCardToPort = (machineId, portId, simCardId) => {
+    // Update the SIM card status to 'used' and set tanggalDigunakan
+    setSimCards(prevCards => 
+      prevCards.map(card => 
+        card.id === simCardId 
+          ? { ...card, status: 'used', tanggalDigunakan: new Date().toISOString().split('T')[0] }
+          : card
+      )
+    );
+
+    // Update the port with SIM card information
+    const selectedCard = simCards.find(card => card.id === simCardId);
+    if (selectedCard) {
+      updatePort(machineId, portId, {
+        perdanaNomor: selectedCard.nomor,
+        boxKecil: selectedCard.box,
+        status: 'terisi'
+      });
+    }
+  };
+
+  const removeSimCardFromPort = (machineId, portId, perdanaNomor) => {
+    // Find and update the SIM card status back to 'active'
+    setSimCards(prevCards => 
+      prevCards.map(card => 
+        card.nomor === perdanaNomor 
+          ? { ...card, status: 'active', tanggalDigunakan: '' }
+          : card
+      )
+    );
+
+    // Clear the port
+    updatePort(machineId, portId, {
+      perdanaNomor: '',
+      boxKecil: '',
+      status: 'kosong'
+    });
   };
 
   return (

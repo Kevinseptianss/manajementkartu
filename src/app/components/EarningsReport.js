@@ -6,6 +6,9 @@ import { FiDollarSign, FiUsers, FiMonitor, FiTrendingUp, FiBarChart } from 'reac
 export default function EarningsReport({ machines, simCards }) {
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [selectedMachine, setSelectedMachine] = useState('all');
+  const [selectedWorker, setSelectedWorker] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const getTotalWorkers = () => {
     if (selectedMachine === 'all') {
@@ -119,6 +122,7 @@ export default function EarningsReport({ machines, simCards }) {
             <option value="week">Minggu Ini</option>
             <option value="month">Bulan Ini</option>
             <option value="year">Tahun Ini</option>
+            <option value="custom">Pilih Tanggal</option>
           </select>
 
           <select
@@ -133,7 +137,47 @@ export default function EarningsReport({ machines, simCards }) {
               </option>
             ))}
           </select>
+
+          <select
+            value={selectedWorker}
+            onChange={(e) => setSelectedWorker(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Semua Worker</option>
+            {getWorkerEarnings().map(worker => (
+              <option key={worker.name} value={worker.name}>
+                {worker.name}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {selectedPeriod === 'custom' && (
+          <div className="flex gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tanggal Mulai
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tanggal Selesai
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
