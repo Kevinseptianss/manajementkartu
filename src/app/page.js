@@ -744,7 +744,7 @@ export default function Home() {
                   </h4>
                   <p className="text-sm text-orange-700">
                     This will add dummy/fake SIM card data to your database. 
-                    Make sure you don't have real data or it will be mixed with dummy data.
+                    Make sure you don&apos;t have real data or it will be mixed with dummy data.
                     Only use this for testing purposes.
                   </p>
                 </div>
