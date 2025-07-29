@@ -454,4 +454,3 @@ export default function RackManagement({ racks, onAddRack, setRacks, simCards })
       )}
     </div>
   );
-}
