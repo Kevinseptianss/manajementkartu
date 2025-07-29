@@ -329,3 +329,221 @@ export function useRacks() {
     setRacks
   };
 }
+
+// Custom hook for Box Besar
+export function useBoxBesar() {
+  const [boxBesar, setBoxBesar] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchBoxBesar = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/boxbesar');
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxBesar(result.data);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addBoxBesar = async (boxData) => {
+    try {
+      const response = await fetch('/api/boxbesar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(boxData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxBesar(prev => [...prev, result.data]);
+        return result.data;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const updateBoxBesar = async (id, boxData) => {
+    try {
+      const response = await fetch('/api/boxbesar', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, ...boxData }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxBesar(prev => prev.map(box => 
+          box.id === id ? { ...box, ...boxData } : box
+        ));
+        return result.data;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const deleteBoxBesar = async (id) => {
+    try {
+      const response = await fetch(`/api/boxbesar?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxBesar(prev => prev.filter(box => box.id !== id));
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchBoxBesar();
+  }, []);
+
+  return {
+    boxBesar,
+    loading,
+    error,
+    fetchBoxBesar,
+    addBoxBesar,
+    updateBoxBesar,
+    deleteBoxBesar,
+    setBoxBesar
+  };
+}
+
+// Custom hook for Box Kecil
+export function useBoxKecil() {
+  const [boxKecil, setBoxKecil] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchBoxKecil = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/boxkecil');
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxKecil(result.data);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addBoxKecil = async (boxData) => {
+    try {
+      const response = await fetch('/api/boxkecil', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(boxData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxKecil(prev => [...prev, result.data]);
+        return result.data;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const updateBoxKecil = async (id, boxData) => {
+    try {
+      const response = await fetch('/api/boxkecil', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, ...boxData }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxKecil(prev => prev.map(box => 
+          box.id === id ? { ...box, ...boxData } : box
+        ));
+        return result.data;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const deleteBoxKecil = async (id) => {
+    try {
+      const response = await fetch(`/api/boxkecil?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setBoxKecil(prev => prev.filter(box => box.id !== id));
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchBoxKecil();
+  }, []);
+
+  return {
+    boxKecil,
+    loading,
+    error,
+    fetchBoxKecil,
+    addBoxKecil,
+    updateBoxKecil,
+    deleteBoxKecil,
+    setBoxKecil
+  };
+}

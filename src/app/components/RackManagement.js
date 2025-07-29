@@ -2,52 +2,121 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { FiArchive, FiPlus, FiTrash2, FiPackage, FiBox } from 'react-icons/fi';
+import { FiArchive, FiPlus, FiTrash2, FiPackage, FiBox, FiSearch, FiX, FiEdit2 } from 'react-icons/fi';
 
 export default function RackManagement({ racks, onAddRack, setRacks, simCards }) {
-  const [showForm, setShowForm] = useState(false);
+  const [activeSection, setActiveSection] = useState('rakKartu');
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState(''); // 'rakKartu', 'boxBesar', 'boxKecil'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItems, setSelectedItems] = useState([]);
+  
   const [formData, setFormData] = useState({
-    namaKartu: '',
-    jumlahKartu: '',
-    boxBesar: [],
-    lokasi: ''
+    namaRak: '',
+    deskripsi: '',
+    lokasi: '',
+    selectedBoxBesar: []
   });
 
-  const [boxForm, setBoxForm] = useState({
+  const [boxBesarForm, setBoxBesarForm] = useState({
     namaBox: '',
-    boxKecil: []
+    deskripsi: '',
+    selectedBoxKecil: []
   });
 
   const [boxKecilForm, setBoxKecilForm] = useState({
     namaBoxKecil: '',
-    perdana: []
+    kapasitas: '',
+    deskripsi: ''
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Check for duplicate box names in existing SIM cards
-    const existingBoxes = simCards.map(card => card.box.toLowerCase());
-    const hasConflict = formData.boxBesar.some(box => 
-      existingBoxes.includes(box.namaBox.toLowerCase())
-    );
-    
-    if (hasConflict) {
-      alert('Nama box sudah digunakan di kartu SIM. Pilih nama yang berbeda.');
-      return;
-    }
-    
-    onAddRack(formData);
-    setFormData({
-      namaKartu: '',
-      jumlahKartu: '',
-      boxBesar: [],
-      lokasi: ''
+  const sections = [
+    { id: 'rakKartu', label: 'Rak Kartu', icon: FiArchive },
+    { id: 'boxBesar', label: 'Box Besar', icon: FiPackage },
+    { id: 'boxKecil', label: 'Box Kecil', icon: FiBox }
+  ];
+
+  // Get all Box Kecil across all racks
+  const getAllBoxKecil = () => {
+    const allBoxKecil = [];
+    racks.forEach(rak => {
+      rak.boxBesar?.forEach(boxBesar => {
+        boxBesar.boxKecil?.forEach(boxKecil => {
+          allBoxKecil.push({
+            ...boxKecil,
+            id: boxKecil.id || `${rak.id}-${boxBesar.id}-${boxKecil.namaBoxKecil}`,
+            rakName: rak.namaRak,
+            boxBesarName: boxBesar.namaBox,
+            path: `${rak.namaRak} > ${boxBesar.namaBox}`
+          });
+        });
+      });
     });
-    setShowForm(false);
+    return allBoxKecil;
   };
 
-  const handleChange = (e) => {
+  // Get unassigned Box Kecil (not in any Box Besar)
+  const getUnassignedBoxKecil = () => {
+    const allBoxKecil = getAllBoxKecil();
+    const assignedIds = new Set();
+    
+    racks.forEach(rak => {
+      rak.boxBesar?.forEach(boxBesar => {
+        boxBesar.boxKecil?.forEach(boxKecil => {
+          assignedIds.add(boxKecil.id || boxKecil.namaBoxKecil);
+        });
+      });
+    });
+
+    return allBoxKecil.filter(box => !assignedIds.has(box.id));
+  };
+
+  const openModal = (type) => {
+    setModalType(type);
+    setShowModal(true);
+    setSearchTerm('');
+    setSelectedItems([]);
+  };
+
+  const handleSubmit = () => {
+    if (modalType === 'rakKartu') {
+      onAddRack({
+        id: Date.now(),
+        namaRak: formData.namaRak,
+        deskripsi: formData.deskripsi,
+        lokasi: formData.lokasi,
+        boxBesar: formData.selectedBoxBesar,
+        createdAt: new Date().toISOString()
+      });
+      setFormData({ namaRak: '', deskripsi: '', lokasi: '', selectedBoxBesar: [] });
+    } else if (modalType === 'boxBesar') {
+      // Add to standalone Box Besar or update existing racks
+      const newBoxBesar = {
+        id: Date.now(),
+        namaBox: boxBesarForm.namaBox,
+        deskripsi: boxBesarForm.deskripsi,
+        boxKecil: boxBesarForm.selectedBoxKecil,
+        createdAt: new Date().toISOString()
+      };
+      // This would need to be handled by parent component
+      console.log('New Box Besar:', newBoxBesar);
+      setBoxBesarForm({ namaBox: '', deskripsi: '', selectedBoxKecil: [] });
+    } else if (modalType === 'boxKecil') {
+      const newBoxKecil = {
+        id: Date.now(),
+        namaBoxKecil: boxKecilForm.namaBoxKecil,
+        kapasitas: parseInt(boxKecilForm.kapasitas) || 0,
+        deskripsi: boxKecilForm.deskripsi,
+        usedSlots: 0,
+        createdAt: new Date().toISOString()
+      };
+      // This would need to be handled by parent component
+      console.log('New Box Kecil:', newBoxKecil);
+      setBoxKecilForm({ namaBoxKecil: '', kapasitas: '', deskripsi: '' });
+    }
+    
+    setShowModal(false);
+  };
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -95,9 +164,26 @@ export default function RackManagement({ racks, onAddRack, setRacks, simCards })
     setRacks(racks.filter(rack => rack.id !== id));
   };
 
-  const generateBarcode = (text) => {
-    // Simple barcode placeholder - in real app, use barcode library
-    return `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(text)}&code=Code128&translate-esc=on`;
+  const generateQRCode = (phoneNumbers, boxInfo = null) => {
+    // Create structured data for QR code that includes phone numbers and box information
+    let qrData;
+    
+    if (typeof phoneNumbers === 'string') {
+      // If it's already a string, use it directly
+      qrData = phoneNumbers;
+    } else {
+      // If it's an array or other format, create structured JSON data
+      qrData = JSON.stringify({
+        type: "sim_card_rack",
+        box: boxInfo?.name || "Unknown Box",
+        count: Array.isArray(phoneNumbers) ? phoneNumbers.length : 1,
+        numbers: Array.isArray(phoneNumbers) ? phoneNumbers : [phoneNumbers],
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // QR code can handle much longer data than barcodes, perfect for multiple phone numbers
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
   };
 
   return (
@@ -306,14 +392,46 @@ export default function RackManagement({ racks, onAddRack, setRacks, simCards })
                               </div>
                               
                               {boxKecil.perdana.length > 0 && (
-                                <div className="mt-1">
-                                  <Image
-                                    src={generateBarcode(boxKecil.perdana.map(p => p.nomor).join(','))}
-                                    alt="Barcode"
-                                    width={200}
-                                    height={32}
-                                    className="w-full h-8 object-contain"
-                                  />
+                                <div className="mt-2">
+                                  <div className="text-xs text-gray-500 mb-1">
+                                    QR Code untuk {boxKecil.perdana.length} nomor:
+                                  </div>
+                                  <div className="relative group">
+                                    <Image
+                                      src={generateQRCode(
+                                        boxKecil.perdana.map(p => p.nomor), 
+                                        { name: boxKecil.namaBoxKecil }
+                                      )}
+                                      alt="QR Code"
+                                      width={120}
+                                      height={120}
+                                      className="w-30 h-30 object-contain border border-gray-200 rounded hover:border-blue-400 transition-colors"
+                                      title={`QR Code berisi: ${boxKecil.perdana.map(p => p.nomor).join(', ')}`}
+                                    />
+                                    
+                                    {/* Tooltip showing QR content on hover */}
+                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                                      <div className="bg-gray-900 text-white text-xs rounded py-2 px-3 max-w-xs">
+                                        <div className="font-medium mb-1">QR Code berisi:</div>
+                                        <div className="space-y-1">
+                                          {boxKecil.perdana.slice(0, 5).map((p, idx) => (
+                                            <div key={idx}>• {p.nomor}</div>
+                                          ))}
+                                          {boxKecil.perdana.length > 5 && (
+                                            <div className="text-gray-300">
+                                              ... dan {boxKecil.perdana.length - 5} nomor lainnya
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="text-gray-400 mt-1 pt-1 border-t border-gray-700">
+                                          Box: {boxKecil.namaBoxKecil}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Scan untuk melihat semua nomor • Hover untuk preview
+                                  </div>
                                 </div>
                               )}
                             </div>

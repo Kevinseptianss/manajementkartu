@@ -8,10 +8,29 @@ export async function PUT(request, { params }) {
     const data = await request.json();
     const { portId, ...portData } = data;
     
+    console.log('🔍 Port update API called with:', {
+      machineId,
+      portId,
+      portData
+    });
+    
     // Get the machine document
     const machineDoc = await db.collection('machines').doc(machineId).get();
     
     if (!machineDoc.exists) {
+      console.error('❌ Machine not found in database:', {
+        requestedId: machineId,
+        exists: machineDoc.exists
+      });
+      
+      // Debug: List all available machines
+      const allMachines = await db.collection('machines').get();
+      const availableIds = [];
+      allMachines.forEach(doc => {
+        availableIds.push({ id: doc.id, name: doc.data().namaMesin });
+      });
+      console.log('🔍 Available machines in database:', availableIds);
+      
       return NextResponse.json(
         { success: false, error: 'Machine not found' },
         { status: 404 }
