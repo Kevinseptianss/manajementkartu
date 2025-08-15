@@ -25,6 +25,7 @@ import RackManagement from './components/RackManagementSeparate';
 import MachineManagement from './components/MachineManagement';
 import EarningsReport from './components/EarningsReport';
 import SearchCard from './components/SearchCard';
+import BoxShootingManager from './components/BoxShootingManager';
 import { useSimCards, useMachines, useRacks, useBoxKecil, useBoxBesar } from '../hooks/useFirebase';
 import { 
   SkeletonStats, 
@@ -38,6 +39,7 @@ import {
 export default function Home() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showBoxShootingModal, setShowBoxShootingModal] = useState(false);
   
   // Mock data modal state
   const [showMockDataModal, setShowMockDataModal] = useState(false);
@@ -87,6 +89,11 @@ export default function Home() {
     loading: racksLoading 
   } = useRacks();
 
+  // Debug racks data
+  console.log('🏗️ Page.js - racks from useRacks:', racks);
+  console.log('🏗️ Page.js - racks length:', racks?.length);
+  console.log('🏗️ Page.js - racksLoading:', racksLoading);
+
   // Hook for Box Kecil data
   const { 
     boxKecil, 
@@ -121,28 +128,80 @@ export default function Home() {
     }, 0);
   };
 
-  const getUsableCardsAfter90Days = () => {
+  const getUsableBoxesAfter90Days = () => {
     const today = new Date();
-    return simCards.filter(card => {
+    const eligibleCards = simCards.filter(card => {
       if (!card.masaAktif) return false;
       const masaAktifDate = new Date(card.masaAktif);
       const diffTime = today - masaAktifDate;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays >= 90 && card.status === 'active';
-    }).length;
+    });
+    
+    // Group by boxes
+    const boxGroups = eligibleCards.reduce((boxes, card) => {
+      const boxId = card.boxKecilId || 'unknown';
+      const boxName = card.boxKecilName || 'Unknown Box';
+      if (!boxes[boxId]) {
+        boxes[boxId] = { id: boxId, name: boxName, count: 0, cards: [] };
+      }
+      boxes[boxId].count++;
+      boxes[boxId].cards.push(card);
+      return boxes;
+    }, {});
+    
+    return Object.values(boxGroups);
   };
 
-  const getCardsNeedShooting = () => {
-    return simCards.filter(card => {
-      // Cards that need to be "shot" (could be cards with certain status or criteria)
-      return card.status === 'inactive' || (card.masaTenggang && parseInt(card.masaTenggang) <= 7);
+  const getBoxesNeedShooting = () => {
+    const today = new Date();
+    const cardsNeedShooting = simCards.filter(card => {
+      if (card.status === 'inactive') return true;
+      if (!card.masaAktif) return true;
+      
+      const activeDate = new Date(card.masaAktif);
+      const daysUntilExpiry = Math.ceil((activeDate - today) / (1000 * 60 * 60 * 24));
+      return daysUntilExpiry <= 30;
     });
+    
+    // Group by boxes and sort by urgency
+    const boxGroups = cardsNeedShooting.reduce((boxes, card) => {
+      const boxId = card.boxKecilId || 'unknown';
+      const boxName = card.boxKecilName || 'Unknown Box';
+      if (!boxes[boxId]) {
+        boxes[boxId] = { 
+          id: boxId, 
+          name: boxName, 
+          count: 0, 
+          cards: [],
+          urgentCount: 0,
+          minDaysLeft: 999
+        };
+      }
+      boxes[boxId].count++;
+      boxes[boxId].cards.push(card);
+      
+      // Calculate urgency
+      if (card.masaAktif) {
+        const daysLeft = Math.ceil((new Date(card.masaAktif) - today) / (1000 * 60 * 60 * 24));
+        if (daysLeft <= 7) boxes[boxId].urgentCount++;
+        if (daysLeft < boxes[boxId].minDaysLeft) boxes[boxId].minDaysLeft = daysLeft;
+      } else {
+        boxes[boxId].urgentCount++;
+        boxes[boxId].minDaysLeft = 0;
+      }
+      
+      return boxes;
+    }, {});
+    
+    // Sort boxes by urgency (least days left first)
+    return Object.values(boxGroups).sort((a, b) => a.minDaysLeft - b.minDaysLeft);
   };
 
   const handleDashboardCardClick = (type) => {
     if (type === 'needShooting') {
-      // Navigate to search with filter for cards that need shooting
-      setActiveTab('search');
+      // Open the box shooting manager modal
+      setShowBoxShootingModal(true);
     } else if (type === 'usableAfter90') {
       // Navigate to SIM cards with filter
       setActiveTab('simcards');
@@ -460,10 +519,10 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-slate-700">Kartu Dapat Digunakan (90+ Hari)</p>
-                        <p className="text-2xl font-bold text-slate-900">{getUsableCardsAfter90Days()}</p>
+                        <p className="text-sm font-medium text-slate-700">Box Perlu Digunakan (90+ Hari)</p>
+                        <p className="text-2xl font-bold text-slate-900">{getUsableBoxesAfter90Days().length}</p>
                         <p className="text-xs text-orange-600">
-                          Klik untuk lihat detail
+                          {getUsableBoxesAfter90Days().reduce((total, box) => total + box.count, 0)} kartu dalam {getUsableBoxesAfter90Days().length} box
                         </p>
                       </div>
                     </div>
@@ -480,43 +539,54 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-slate-700">Kartu Perlu Di Tembak</p>
-                        <p className="text-2xl font-bold text-slate-900">{getCardsNeedShooting().length}</p>
+                        <p className="text-sm font-medium text-slate-700">Box Perlu Di Tembak</p>
+                        <p className="text-2xl font-bold text-slate-900">{getBoxesNeedShooting().length}</p>
                         <p className="text-xs text-red-600">
-                          Klik untuk cari per box
+                          {getBoxesNeedShooting().reduce((total, box) => total + box.count, 0)} kartu dalam {getBoxesNeedShooting().length} box
                         </p>
                       </div>
                     </div>
                     
-                    {/* Show list of cards that need shooting */}
-                    {getCardsNeedShooting().length > 0 && (
+                    {/* Show list of boxes that need shooting */}
+                    {getBoxesNeedShooting().length > 0 && (
                       <div className="border-t border-gray-100 pt-4">
                         <h4 className="text-xs font-medium text-gray-600 mb-2">
-                          Kartu yang perlu di tembak:
+                          Box yang perlu di tembak (urutan prioritas):
                         </h4>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {getCardsNeedShooting().slice(0, 5).map((card, index) => (
-                            <div key={card.id || index} className="flex justify-between items-center text-xs">
+                          {getBoxesNeedShooting().slice(0, 5).map((box, index) => (
+                            <div 
+                              key={box.id || index} 
+                              className="flex justify-between items-center text-xs cursor-pointer hover:bg-red-100 p-2 rounded"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Navigate directly to the box
+                                setActiveTab('simcards');
+                                // You can add more specific navigation logic here
+                              }}
+                            >
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-gray-900 truncate">
-                                  {card.nomor}
+                                  {box.name}
                                 </p>
                                 <p className="text-gray-500 truncate">
-                                  {card.jenisKartu} • {card.boxKecilName || 'No Box'}
+                                  {box.count} kartu • {box.urgentCount} mendesak
                                 </p>
                               </div>
                               <span className={`px-2 py-1 text-xs rounded-full ${
-                                card.status === 'inactive' 
+                                box.minDaysLeft <= 1 
                                   ? 'bg-red-100 text-red-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
+                                  : box.minDaysLeft <= 7
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-orange-100 text-orange-800'
                               }`}>
-                                {card.status === 'inactive' ? 'Inactive' : `${card.masaTenggang}d left`}
+                                {box.minDaysLeft <= 0 ? 'Expired' : `${box.minDaysLeft}d left`}
                               </span>
                             </div>
                           ))}
-                          {getCardsNeedShooting().length > 5 && (
+                          {getBoxesNeedShooting().length > 5 && (
                             <div className="text-xs text-gray-500 text-center pt-2 border-t border-gray-100">
-                              +{getCardsNeedShooting().length - 5} kartu lainnya
+                              +{getBoxesNeedShooting().length - 5} box lainnya
                             </div>
                           )}
                         </div>
@@ -659,7 +729,7 @@ export default function Home() {
 
           {activeTab === 'simcards' && (
             <div>
-              <SimCardForm onSubmit={addSimCard} racks={racks} />
+              <SimCardForm onSubmit={addSimCard} racks={racks} racksLoading={racksLoading} />
               <SimCardList 
                 cards={simCards} 
                 setCards={setSimCards}
@@ -954,6 +1024,22 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Box Shooting Manager Modal */}
+      {showBoxShootingModal && (
+        <BoxShootingManager
+          simCards={simCards}
+          onUpdateCards={async (updatedCards) => {
+            // Update all cards
+            for (const card of updatedCards) {
+              if (card.tanggalTembak) {
+                await updateSimCard(card.id, card);
+              }
+            }
+          }}
+          onClose={() => setShowBoxShootingModal(false)}
+        />
       )}
     </div>
   );

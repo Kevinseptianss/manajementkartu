@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { FiEdit2, FiTrash2, FiSave, FiX, FiList } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiSave, FiX, FiList, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { SkeletonTable } from './SkeletonLoader';
 
 export default function SimCardList({ 
@@ -18,6 +18,8 @@ export default function SimCardList({
 }) {
   const [editingCard, setEditingCard] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [filterBox, setFilterBox] = useState('');
 
   // Helper function to get rack location from hierarchy
   const getRackLocation = (card) => {
@@ -69,6 +71,47 @@ export default function SimCardList({
     // If not in machine, check the original status or default to active
     return card.status === 'inactive' ? 'inactive' : 'active'; // dapat digunakan
   };
+
+  // Sorting functionality
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Sort cards based on current sort configuration
+  const sortedCards = [...cards].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+    
+    // Handle special sorting cases
+    if (sortConfig.key === 'status') {
+      aValue = getCardStatus(a);
+      bValue = getCardStatus(b);
+    } else if (sortConfig.key === 'masaAktif' || sortConfig.key === 'tanggalDigunakan') {
+      aValue = aValue ? new Date(aValue) : new Date(0);
+      bValue = bValue ? new Date(bValue) : new Date(0);
+    } else if (sortConfig.key === 'daysUntilExpiry') {
+      const today = new Date();
+      aValue = a.masaAktif ? Math.ceil((new Date(a.masaAktif) - today) / (1000 * 60 * 60 * 24)) : -999;
+      bValue = b.masaAktif ? Math.ceil((new Date(b.masaAktif) - today) / (1000 * 60 * 60 * 24)) : -999;
+    }
+    
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Filter cards based on box filter
+  const filteredCards = sortedCards.filter(card => {
+    if (!filterBox) return true;
+    const boxName = card.boxKecilName || '';
+    return boxName.toLowerCase().includes(filterBox.toLowerCase());
+  });
 
   const deleteCard = async (id) => {
     try {
@@ -145,10 +188,29 @@ export default function SimCardList({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-          <FiList className="w-5 h-5 mr-2" />
-          Daftar Kartu SIM
-        </h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+            <FiList className="w-5 h-5 mr-2" />
+            Daftar Kartu SIM
+          </h2>
+          
+          {/* Filter by Box */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-600">Filter Box:</label>
+              <input
+                type="text"
+                placeholder="Cari nama box..."
+                value={filterBox}
+                onChange={(e) => setFilterBox(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="text-sm text-gray-500">
+              {filteredCards.length} dari {cards.length} kartu
+            </div>
+          </div>
+        </div>
       </div>
       
       {loading ? (
@@ -158,26 +220,85 @@ export default function SimCardList({
           <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nomor
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('nomor')}
+              >
+                <div className="flex items-center">
+                  Nomor
+                  {sortConfig.key === 'nomor' && (
+                    sortConfig.direction === 'asc' ? <FiArrowUp className="ml-1 w-3 h-3" /> : <FiArrowDown className="ml-1 w-3 h-3" />
+                  )}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('jenisKartu')}
+              >
+                <div className="flex items-center">
+                  Jenis Kartu
+                  {sortConfig.key === 'jenisKartu' && (
+                    sortConfig.direction === 'asc' ? <FiArrowUp className="ml-1 w-3 h-3" /> : <FiArrowDown className="ml-1 w-3 h-3" />
+                  )}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('masaAktif')}
+              >
+                <div className="flex items-center">
+                  Masa Aktif
+                  {sortConfig.key === 'masaAktif' && (
+                    sortConfig.direction === 'asc' ? <FiArrowUp className="ml-1 w-3 h-3" /> : <FiArrowDown className="ml-1 w-3 h-3" />
+                  )}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('tanggalDigunakan')}
+              >
+                <div className="flex items-center">
+                  Tanggal Digunakan
+                  {sortConfig.key === 'tanggalDigunakan' && (
+                    sortConfig.direction === 'asc' ? <FiArrowUp className="ml-1 w-3 h-3" /> : <FiArrowDown className="ml-1 w-3 h-3" />
+                  )}
+                </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Jenis Kartu
+                Tanggal Kembali
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Masa Aktif
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('daysUntilExpiry')}
+              >
+                <div className="flex items-center">
+                  Sisa Hari
+                  {sortConfig.key === 'daysUntilExpiry' && (
+                    sortConfig.direction === 'asc' ? <FiArrowUp className="ml-1 w-3 h-3" /> : <FiArrowDown className="ml-1 w-3 h-3" />
+                  )}
+                </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tanggal Digunakan
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('boxKecilName')}
+              >
+                <div className="flex items-center">
+                  Box Lokasi
+                  {sortConfig.key === 'boxKecilName' && (
+                    sortConfig.direction === 'asc' ? <FiArrowUp className="ml-1 w-3 h-3" /> : <FiArrowDown className="ml-1 w-3 h-3" />
+                  )}
+                </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tenggang
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Lokasi
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('status')}
+              >
+                <div className="flex items-center">
+                  Status
+                  {sortConfig.key === 'status' && (
+                    sortConfig.direction === 'asc' ? <FiArrowUp className="ml-1 w-3 h-3" /> : <FiArrowDown className="ml-1 w-3 h-3" />
+                  )}
+                </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 NIK
@@ -194,8 +315,13 @@ export default function SimCardList({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {cards.map((card) => (
-              <tr key={card.id}>
+            {filteredCards.map((card) => {
+              const currentStatus = getCardStatus(card);
+              const today = new Date();
+              const daysUntilExpiry = card.masaAktif ? Math.ceil((new Date(card.masaAktif) - today) / (1000 * 60 * 60 * 24)) : null;
+              
+              return (
+              <tr key={card.id} className={daysUntilExpiry !== null && daysUntilExpiry <= 7 ? 'bg-red-50' : ''}>
                 {editingCard === card.id ? (
                   <>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -242,12 +368,17 @@ export default function SimCardList({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
-                        type="number"
-                        name="masaTenggang"
-                        value={editFormData.masaTenggang}
+                        type="date"
+                        name="tanggalDigunakanKembali"
+                        value={editFormData.tanggalDigunakanKembali || ''}
                         onChange={handleEditChange}
                         className="w-full px-2 py-1 border border-gray-300 rounded"
                       />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs text-gray-500">
+                        Sisa hari otomatis dihitung
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="text-xs">
@@ -330,15 +461,21 @@ export default function SimCardList({
                       {card.tanggalDigunakan || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {card.masaTenggang} hari
+                      {card.tanggalDigunakanKembali || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Rak: {getRackLocation(card)}<br/>
-                      Box: {getBoxPath(card).boxBesar}<br/>
-                      Kotak: {getBoxPath(card).boxKecil}
+                      {daysUntilExpiry !== null ? (
+                        <span className={daysUntilExpiry <= 7 ? 'text-red-600 font-bold' : daysUntilExpiry <= 30 ? 'text-yellow-600' : 'text-green-600'}>
+                          {daysUntilExpiry <= 0 ? 'Expired' : `${daysUntilExpiry} hari`}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="font-medium">{card.boxKecilName || 'No Box'}</div>
+                      <div className="text-xs text-gray-400">{getRackLocation(card)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(getCardStatus(card))}
+                      {getStatusBadge(currentStatus)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {card.nik || '-'}
@@ -375,7 +512,8 @@ export default function SimCardList({
                   </>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
           {cards.length === 0 && (
             <tbody>
