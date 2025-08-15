@@ -463,7 +463,7 @@ export default function SimCardForm({ onSubmit, racks = [], racksLoading = false
                     <h4 className="text-sm font-medium text-orange-800">No Racks Available</h4>
                     <p className="text-xs text-orange-700 mt-1">
                       You need to create racks and boxes first before uploading SIM cards. 
-                      Go to "Rak Kartu" tab to create your storage structure.
+                      Go to &quot;Rak Kartu&quot; tab to create your storage structure.
                     </p>
                   </div>
                 </div>
@@ -822,7 +822,7 @@ export default function SimCardForm({ onSubmit, racks = [], racksLoading = false
 
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
-                <strong>Box ID Mapping Required:</strong> The CSV contains Box IDs that don't match your existing Box Kecil. 
+                <strong>Box ID Mapping Required:</strong> The CSV contains Box IDs that don&apos;t match your existing Box Kecil. 
                 Please map each CSV Box ID to the correct Box Kecil where you want to store the SIM cards.
               </p>
             </div>

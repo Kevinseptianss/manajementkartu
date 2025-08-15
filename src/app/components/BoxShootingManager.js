@@ -120,7 +120,7 @@ export default function BoxShootingManager({
           <p className="text-sm text-blue-800">
             <FiAlertTriangle className="inline w-4 h-4 mr-1" />
             <strong>Box Shooting Update:</strong> Select a box and set the new active date to update all SIM cards in that box.
-            This will mark them as "telah ditembak" and update their masa aktif.
+            This will mark them as &quot;telah ditembak&quot; and update their masa aktif.
           </p>
         </div>
 
